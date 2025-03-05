@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kafka Sensor Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+        }
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        th {
+            background: #007bff;
+            color: white;
+        }
+        #loading {
+            margin: 20px;
+            font-size: 18px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>📡 Данные с сенсоров (Kafka Stream)</h1>
+    <p id="loading">Загружаем данные...</p>
+
+    <table id="data-table">
+        <thead>
+            <tr>
+                <th>Температура (°C)</th>
+                <th>Влажность (%)</th>
+                <th>Давление (hPa)</th>
+                <th>Высота (м)</th>
+                <th>CO2 (ppm)</th>
+                <th>TVOC (ppb)</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        async function fetchData() {
+            try {
+                const response = await fetch("http://127.0.0.1:5001/data");
+                const data = await response.json();
+                
+                const tableBody = document.querySelector("#data-table tbody");
+                tableBody.innerHTML = "";  
+                
+                data.forEach(entry => {
+                    const row = `<tr>
+                        <td>${entry.temperature.toFixed(2)}</td>
+                        <td>${entry.humidity.toFixed(2)}</td>
+                        <td>${entry.pressure.toFixed(2)}</td>
+                        <td>${entry.altitude.toFixed(2)}</td>
+                        <td>${entry.co2}</td>
+                        <td>${entry.tvoc}</td>
+                    </tr>`;
+                    tableBody.innerHTML += row;
+                });
+
+                document.getElementById("loading").style.display = "none";
+
+            } catch (error) {
+                console.error("Ошибка загрузки данных:", error);
+                document.getElementById("loading").innerText = "Ошибка загрузки данных";
+            }
+        }
+        setInterval(fetchData, 5000);
+        fetchData();  
+    </script>
+
+</body>
+</html>

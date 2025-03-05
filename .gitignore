@@ -1,0 +1,6 @@
+/.venv
+/myjupyter/.ipynb_checkpoints
+/myjupyter/.Trash-0
+/myserver/app_copy.txt
+docker-compose_copy.txt 
+/kafka_react_app
