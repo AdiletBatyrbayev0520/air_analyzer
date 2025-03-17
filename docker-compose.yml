@@ -4,7 +4,7 @@ services:
   zookeeper:
     container_name: zookeeper
     hostname: zookeeper
-    image: docker.io/bitnami/zookeeper
+    image: bitnami/zookeeper
     ports:
       - "2181:2181"
     environment:
@@ -15,7 +15,7 @@ services:
   kafka:
     container_name: kafka
     hostname: kafka
-    image: docker.io/bitnami/kafka
+    image: bitnami/kafka
     ports:
       - "9092:9092"
       - "9093:9093"
@@ -58,14 +58,32 @@ services:
     networks:
       - kafka-net
 
-  pyserver:
-    image: pyserver:latest
+  backend:
+    build: ./kafka_react_app/backend
+    container_name: backend
+    ports:
+      - "5000:3000"
+    environment:
+      - PORT=3000
+      - KAFKA_BROKERS=kafka:9092
     depends_on:
       - kafka
-    volumes:
-      - ./myserver/app.py:/app/app.py
+    networks:
+      - kafka-net
+
+  frontend:
+    build: ./kafka_react_app/frontend
+    container_name: frontend
     ports:
-      - "5001:5001"
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+      - WDS_SOCKET_PORT=0
+    volumes:
+      - ./kafka_react_app/frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
     networks:
       - kafka-net
 

@@ -1,58 +1,70 @@
-# Task List Web Page
+# Kafka Real-Time Sensor Monitoring
 
-This project contains an HTML and CSS-based task list web page with a styled container displaying a list of tasks. It also includes setup instructions for running Kafka on Docker.
+Проект для мониторинга данных с сенсоров в реальном времени, использующий Kafka для обработки потоков данных и React для визуализации.
 
-## Task List Page
+## Архитектура проекта
 
-The HTML page consists of:
-- A styled task list interface.
-- A list of Kafka-related tasks such as configuring replications, setting TTL, and defining a partition key.
+- **Frontend**: React приложение для отображения данных
+- **Backend**: Node.js сервер с Express для обработки данных из Kafka
+- **Kafka**: Система обработки потоков данных
+- **Jupyter**: Ноутбук для анализа и тестирования
 
-## Source
+## Структура проекта
 
-This project is based on [Seeed Studio Wiki](https://wiki.seeedstudio.com/xiao_esp32c6_kafka/). Some provided codes from the original source might not work correctly, so using verified codes from GitHub is recommended.
+```
+.
+├── kafka_react_app/
+│   ├── frontend/         # React приложение
+│   └── backend/          # Node.js сервер
+├── myjupyter/           # Jupyter ноутбуки
+└── docker-compose.yml   # Docker конфигурация
+```
 
----
+## Запуск проекта
 
-## Setup Instructions
-
-### Commands to Start
-
-Run the following commands in the terminal to set up the project:
-
+1. Сборка Jupyter образа:
 ```sh
 cd myjupyter/
 docker build -t jupyter .
 cd ..
-cd myserver/
-docker build -t pyserver .
-cd ..
+```
+
+2. Запуск всех сервисов:
+```sh
 docker-compose up -d
 ```
 
-### Verify Kafka on Docker
+## Доступ к сервисам
 
-To check if Kafka is running inside Docker, use these commands:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5000
+- Kafka: localhost:9092 (internal), localhost:9093 (external)
+- Jupyter: http://localhost:8888
+- Kafka REST: http://localhost:8082
+
+## Проверка работы Kafka
+
+Для проверки работы Kafka выполните:
 
 ```sh
 docker exec -it kafka bash
 cd opt/bitnami/kafka/bin/
-kafka-console-consumer.sh --bootstrap-server localhost:9093 --topic my_topic --from-beginning
+kafka-console-consumer.sh --bootstrap-server localhost:9093 --topic f103 --from-beginning
 ```
 
-These commands will allow you to interact with Kafka and confirm that it's working properly.
+## Топики Kafka
 
----
+Проект использует следующие топики:
+- f103: Данные с сенсора в комнате F103
+- i111: Данные с сенсора в комнате I111
+- canteen: Данные с сенсора в столовой
+- hall: Данные с сенсора в холле
 
-## Requirements
+## Требования
 
-- Docker & Docker Compose installed
-- Kafka setup inside Docker
+- Docker
+- Docker Compose
 
-## License
+## Источник
 
-This project follows an open-source license. Modify and use it as needed.
-
----
-
-For any issues, refer to the documentation or check GitHub for updated code snippets.
+Проект основан на [Seeed Studio Wiki](https://wiki.seeedstudio.com/xiao_esp32c6_kafka/) с существенными модификациями и улучшениями.
