@@ -1,26 +1,33 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import DataTable from "./DataTable";
-import "./App.css";
+import { Container, Grid, Typography, Box } from '@mui/material';
+import RoomCard from './components/RoomCard';
 
 function App() {
-  const [messages, setMessages] = useState([]);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [messages, setMessages] = useState({
+    f103: [],
+    i111: [],
+    canteen: [], 
+    hall: []
+  });
 
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        console.log("Fetching messages...");
         const response = await axios.get("http://localhost:5000/api/messages");
-        console.log("Received data:", response.data);
-        setMessages(response.data);
-        setError(null);
+        const data = response.data;
+        
+        // Группируем сообщения по топикам
+        const groupedMessages = {
+          f103: data.filter(msg => msg.topic === 'f103'),
+          i111: data.filter(msg => msg.topic === 'i111'),
+          canteen: data.filter(msg => msg.topic === 'canteen'),
+          hall: data.filter(msg => msg.topic === 'hall')
+        };
+        
+        setMessages(groupedMessages);
       } catch (error) {
         console.error("Ошибка при получении данных:", error);
-        setError("Ошибка при получении данных");
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -31,19 +38,24 @@ function App() {
   }, []);
 
   return (
-    <div className="container">
-      <h1>Мониторинг датчиков в реальном времени</h1>
-      <div className="messages-container">
-        {error && <div className="error">{error}</div>}
-        {loading && <div className="loading">Загрузка данных...</div>}
-        {!loading && !error && messages.length === 0 && (
-          <div className="no-data">Нет доступных данных</div>
-        )}
-        {!loading && !error && messages.length > 0 && (
-          <DataTable data={messages} />
-        )}
-      </div>
-    </div>
+    <Container maxWidth="xl">
+      <Box sx={{ my: 4 }}>
+        <Typography variant="h3" component="h1" gutterBottom align="center" sx={{ mb: 4 }}>
+          Мониторинг датчиков в реальном времени
+        </Typography>
+        <Grid container spacing={3}>
+          {Object.entries(messages).map(([roomId, roomData]) => (
+            <Grid item xs={12} md={6} key={roomId}>
+              <RoomCard
+                roomId={roomId}
+                data={roomData[roomData.length - 1]}
+                history={roomData}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+    </Container>
   );
 }
 
