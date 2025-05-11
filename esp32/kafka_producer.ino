@@ -20,6 +20,8 @@
 // Kafka Server Settings
 // #define KAFKA_REST_URL "http://10.20.195.16:8082/topics/f103"
 #define KAFKA_REST_URL "http://10.36.40.22:8082/topics/i111"
+#define ALTERNATIVE_KAFKA_REST_URL "http://192.168.0.247:8082/topics/i111"
+
 // #define KAFKA_REST_URL "http://10.20.195.16:8082/topics/canteen"
 // #define KAFKA_REST_URL "http://10.20.195.16:8082/topics/hall"
 
@@ -51,7 +53,6 @@ void setup() {
         isCcs811Begin = true;
         ccs811.setDriveMode(CCS811_DRIVE_MODE_1SEC);
         
-        // **Ждём готовности данных**
         Serial.println("Ожидание инициализации CCS811 (20 сек)...");
         for (int i = 0; i < 20; i++) {
             if (ccs811.available()) {
@@ -120,10 +121,6 @@ void sendSensorDataToKafka() {
 
     if (WiFi.status() == WL_CONNECTED) {
       HTTPClient http;
-      http.begin(KAFKA_REST_URL);
-      http.addHeader("Content-Type", "application/vnd.kafka.json.v2+json");
-
-      // Формируем JSON для Kafka
       String jsonPayload = "{ \"records\": [{ \"value\": {";
       jsonPayload += "\"temperature\": " + String(temperature) + ",";
       jsonPayload += "\"humidity\": " + String(humidity) + ",";
@@ -133,20 +130,33 @@ void sendSensorDataToKafka() {
       jsonPayload += "\"tvoc\": " + String(tvoc);
       jsonPayload += "}}]}";
 
+
+      http.begin(KAFKA_REST_URL);
+      http.addHeader("Content-Type", "application/vnd.kafka.json.v2+json");
+      
+      Serial.println("Trying primary Kafka URL...");
+      int httpResponseCode = http.POST(jsonPayload);
+
+      if (httpResponseCode <= 0) {
+        Serial.println("Primary Kafka URL failed. Trying alternative URL...");
+        http.end();
+        http.begin(ALTERNATIVE_KAFKA_REST_URL);
+        http.addHeader("Content-Type", "application/vnd.kafka.json.v2+json");
+        httpResponseCode = http.POST(jsonPayload);
+      }
+
+      if (httpResponseCode > 0) {
+        Serial.print("Kafka Response: ");
+        Serial.println(httpResponseCode);
+        String response = http.getString();
+        Serial.println(response);
+      } else {
+        Serial.print("Error sending to both Kafka URLs. HTTP code: ");
+        Serial.println(httpResponseCode);
       Serial.println("Sending data to Kafka...");
       Serial.println(jsonPayload);
 
-      int httpResponseCode = http.POST(jsonPayload);
 
-      if (httpResponseCode > 0) {
-          Serial.print("Kafka Response: ");
-          Serial.println(httpResponseCode);
-          String response = http.getString();
-          Serial.println(response);
-      } else {
-          Serial.print("Error sending to Kafka. HTTP code: ");
-          Serial.println(httpResponseCode);
-      }
 
       http.end();
     } else {
