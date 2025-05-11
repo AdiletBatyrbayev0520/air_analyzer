@@ -1,53 +1,31 @@
 version: '3.8'
 
 services:
-  zookeeper:
-    container_name: zookeeper
-    hostname: zookeeper
-    image: bitnami/zookeeper:3.8.3-debian-11-r21
-    ports:
-      - "2181:2181"
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
-    networks:
-      - kafka-net
-    restart: on-failure
   kafka:
     container_name: kafka
     hostname: kafka
-    image: bitnami/kafka:3.4.0-debian-11-r21
+    image: bitnami/kafka:4.0-debian-12
     ports:
       - "9092:9092"
       - "9093:9093"
     environment:
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
-      - KAFKA_CFG_BROKER_ID=0
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
-      - KAFKA_CFG_LISTENERS=INTERNAL://kafka:9092,EXTERNAL://localhost:9093
-      - KAFKA_CFG_ADVERTISED_LISTENERS=INTERNAL://kafka:9092,EXTERNAL://localhost:9093
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller          # ✅ ДОБАВЛЕНО: роли брокера и контроллера
+      - KAFKA_CFG_NODE_ID=1                                 # ✅ ДОБАВЛЕНО: уникальный ID узла
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093     # ✅ ДОБАВЛЕНО: кто участвует в выборах контроллера
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER      # ✅ ДОБАВЛЕНО: слушатель для контроллера
+      - KAFKA_CFG_LISTENERS=INTERNAL://kafka:9092,CONTROLLER://kafka:9093 # ✅ ОБНОВЛЕНО: объявлены два слушателя
+      - KAFKA_CFG_ADVERTISED_LISTENERS=INTERNAL://kafka:9092 # ✅ ОБНОВЛЕНО: только внутренний слушатель
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT # ✅ ДОБАВЛЕНО
       - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=INTERNAL
-      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
-      - KAFKA_CFG_NUM_PARTITIONS=1
-      - KAFKA_CFG_DEFAULT_REPLICATION_FACTOR=1
-      - KAFKA_CFG_MIN_INSYNC_REPLICAS=1
-      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=1
-      - KAFKA_CFG_GROUP_INITIAL_REBALANCE_DELAY_MS=0
-    healthcheck:
-      test: ["CMD-SHELL", "/opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    depends_on:
-      zookeeper:
-        condition: service_started
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_KRAFT_CLUSTER_ID=jhCzCarDSyqr9FkZhIbmYQ # ✅ ДОБАВЛЕНО: ID кластера (должен быть 32 символа)
+    volumes:
+      - ./kafka-data:/bitnami/kafka   
     networks:
       - kafka-net
-    restart: on-failure
+
   kafka-rest:
     container_name: kafka-rest
-    hostname: kafka-rest
     image: confluentinc/cp-kafka-rest
     depends_on:
       - kafka
@@ -57,11 +35,9 @@ services:
       - KAFKA_REST_HOST_NAME=kafka-rest
       - KAFKA_REST_BOOTSTRAP_SERVERS=kafka:9092
     networks:
-      - kafka-net 
-    restart: on-failure
+      - kafka-net
+
   jupyter:
-    container_name: kafka-jupyter
-    hostname: kafka-jupyter
     image: jupyter:latest
     depends_on:
       - kafka
@@ -73,39 +49,34 @@ services:
       - JUPYTER_ENABLE_LAB=yes
     networks:
       - kafka-net
-    restart: on-failure
+
   backend:
     build: ./kafka_react_app/backend
-    container_name: kafka-backend
-    hostname: kafka-backend
+    container_name: backend
     ports:
-      - "5000:5000"
+      - "5000:3000"
     environment:
-      - PORT=5000
+      - PORT=3000
       - KAFKA_BROKERS=kafka:9092
-      - PG_HOST=kafka-postgres
-      - PG_PORT=5432
-      - PG_DATABASE=postgres
-      - PG_USER=user
-      - PG_PASSWORD=root
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5000/api/messages"]
-      interval: 1m30s
-      timeout: 30s
-      retries: 5
-      start_period: 30s
     depends_on:
-      kafka:
-        condition: service_healthy
-      postgres:
-        condition: service_started
+      - kafka
     networks:
       - kafka-net
-    restart: on-failure
+  postgres:
+    image: postgres:15
+    container_name: air_analyzer-postgres
+    environment:
+      - POSTGRES_URL=${POSTGRES_URL}
+    ports:
+      - 10001:5432
+    volumes:  
+      - postgres/db_queries:/docker-entrypoint-initdb.d
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - kafka-net
   frontend:
     build: ./kafka_react_app/frontend
-    container_name: kafka-frontend
-    hostname: kafka-frontend
+    container_name: frontend
     ports:
       - "3000:3000"
     environment:
@@ -114,35 +85,10 @@ services:
     volumes:
       - ./kafka_react_app/frontend:/app
       - /app/node_modules
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000"]
-      interval: 1m30s
-      timeout: 30s
-      retries: 5
-      start_period: 30s
     depends_on:
       - backend
     networks:
       - kafka-net
-    restart: on-failure
-
-  postgres:
-    image: postgres:15
-    container_name: kafka-postgres
-    hostname: kafka-postgres
-    ports:
-      - "10000:5432"
-    environment:
-      - POSTGRES_PASSWORD=root
-      - POSTGRES_USER=user
-      - POSTGRES_DB=postgres
-    volumes:
-      - ./kafka_react_app/backend/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
-      - ./kafka_react_app/backend/postgres_data:/var/lib/postgresql/data
-    networks:
-      - kafka-net
-    restart: on-failure
-
 
 networks:
   kafka-net:

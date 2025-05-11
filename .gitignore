@@ -3,7 +3,6 @@
 /myjupyter/.Trash-0
 docker-compose_copy.txt 
 github.ipynb
-/kafka_react_app/frontend/node_modules
-/kafka_react_app/backend/node_modules
+*node_modules/
 /myserver
-
+*.env

@@ -1,20 +1,26 @@
 const { Kafka } = require("kafkajs");
-const dotenv = require('dotenv');
 
-dotenv.config();
+async function createTopics(kafka) {
+  const admin = kafka.admin();
+  await admin.connect();
 
-const brokers = (process.env.KAFKA_BROKERS || 'kafka:9092').split(',');
-console.log('Connecting to Kafka brokers:', brokers);
+  await admin.createTopics({
+    topics: [
+      { topic: "f103" },
+      { topic: "i111" },
+      { topic: "canteen" },
+      { topic: "hall" },
+      { topic: "i105" },
+    ],
+    waitForLeaders: true,
+  });
+
+  console.log("Topics ensured");
+  await admin.disconnect();
+}
+
 
 exports.kafka = new Kafka({
-  clientId: "backend-service",
-  brokers: brokers,
-  retry: {
-    initialRetryTime: 1000,
-    retries: 10,
-    maxRetryTime: 30000,
-    factor: 2
-  },
-  connectionTimeout: 10000,
-  requestTimeout: 30000
+  clientId: "my-app",
+  brokers: ["kafka:9092"],
 });

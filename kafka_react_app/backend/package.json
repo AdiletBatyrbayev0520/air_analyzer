@@ -12,10 +12,8 @@
   "description": "Backend server for Kafka streaming application",
   "dependencies": {
     "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "kafkajs": "^2.2.4",
-    "pg": "^8.14.1"
+    "express": "^4.18.2",
+    "kafkajs": "^2.2.4"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
