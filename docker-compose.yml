@@ -26,7 +26,7 @@ services:
 
   kafka-rest:
     container_name: kafka-rest
-    image: confluentinc/cp-kafka-rest
+    image: confluentinc/cp-kafka-rest:7.9.1
     depends_on:
       - kafka
     ports:
@@ -38,7 +38,9 @@ services:
       - kafka-net
 
   jupyter:
-    image: jupyter:latest
+    build: 
+      context: ./myjupyter
+      dockerfile: Dockerfile
     depends_on:
       - kafka
     volumes:
@@ -67,10 +69,13 @@ services:
     container_name: air_analyzer-postgres
     environment:
       - POSTGRES_URL=${POSTGRES_URL}
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=postgres
     ports:
       - 10001:5432
     volumes:  
-      - postgres/db_queries:/docker-entrypoint-initdb.d
+      - ./postgres/db_queries:/docker-entrypoint-initdb.d
       - postgres_data:/var/lib/postgresql/data
     networks:
       - kafka-net
@@ -93,3 +98,6 @@ services:
 networks:
   kafka-net:
     driver: bridge
+
+volumes:
+  postgres_data:
