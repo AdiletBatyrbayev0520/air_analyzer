@@ -21,6 +21,7 @@
 // #define KAFKA_REST_URL "http://10.20.195.16:8082/topics/f103"
 #define KAFKA_REST_URL "http://10.36.40.22:8082/topics/i111"
 #define ALTERNATIVE_KAFKA_REST_URL "http://192.168.0.247:8082/topics/i111"
+
 // #define KAFKA_REST_URL "http://10.20.195.16:8082/topics/canteen"
 // #define KAFKA_REST_URL "http://10.20.195.16:8082/topics/hall"
 
@@ -52,7 +53,6 @@ void setup() {
         isCcs811Begin = true;
         ccs811.setDriveMode(CCS811_DRIVE_MODE_1SEC);
         
-        // **Ждём готовности данных**
         Serial.println("Ожидание инициализации CCS811 (20 сек)...");
         for (int i = 0; i < 20; i++) {
             if (ccs811.available()) {
@@ -130,14 +130,13 @@ void sendSensorDataToKafka() {
       jsonPayload += "\"tvoc\": " + String(tvoc);
       jsonPayload += "}}]}";
 
-      // Пробуем основной URL
+
       http.begin(KAFKA_REST_URL);
       http.addHeader("Content-Type", "application/vnd.kafka.json.v2+json");
       
       Serial.println("Trying primary Kafka URL...");
       int httpResponseCode = http.POST(jsonPayload);
-      
-      // Если основной URL не работает, пробуем альтернативный
+
       if (httpResponseCode <= 0) {
         Serial.println("Primary Kafka URL failed. Trying alternative URL...");
         http.end();
@@ -154,7 +153,10 @@ void sendSensorDataToKafka() {
       } else {
         Serial.print("Error sending to both Kafka URLs. HTTP code: ");
         Serial.println(httpResponseCode);
-      }
+      Serial.println("Sending data to Kafka...");
+      Serial.println(jsonPayload);
+
+
 
       http.end();
     } else {
