@@ -5,4 +5,4 @@ const messages = {
   hall: []
 };
 
-module.exports = messages; 
+module.exports = messages;

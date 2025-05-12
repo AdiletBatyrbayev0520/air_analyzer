@@ -17,7 +17,6 @@ function App() {
         const response = await axios.get("http://localhost:5000/api/messages");
         const data = response.data;
         
-        // Группируем сообщения по топикам
         const groupedMessages = {
           f103: data.filter(msg => msg.topic === 'f103'),
           i111: data.filter(msg => msg.topic === 'i111'),
