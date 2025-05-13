@@ -98,7 +98,17 @@ services:
       - backend
     networks:
       - kafka-net
-
+    
+  ip_camera:
+    build: ./ip_camera
+    container_name: ip_camera
+    ports:
+      - "5001:5001"
+    restart: unless-stopped
+    depends_on:
+      - kafka
+    networks:
+      - kafka-net
 networks:
   kafka-net:
     driver: bridge

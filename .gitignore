@@ -6,3 +6,4 @@ github.ipynb
 *node_modules/
 /myserver
 *.env
+*pycache*

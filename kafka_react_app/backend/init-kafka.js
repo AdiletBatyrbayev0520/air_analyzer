@@ -59,7 +59,7 @@ async function init() {
             console.log(`Room ${topic} already exists`);
           }
           
-          const infoId = `${topic}-${partition}-${message.offset}-${new Date().toISOString().split('T')[0]}`; 
+          const infoId = `${topic}-${partition}-${message.offset}-${new Date().toISOString()}`; 
           
           console.log(`Processing message with offset: ${message.offset}`);
           
